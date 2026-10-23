@@ -29,9 +29,97 @@
 0x82652F38 = { name = "sub_82652F38" }
 0x82652F20 = { name = "sub_82652F20" }
 0x82652F40 = { name = "sub_82652F40" }
-# 8-byte forwarding thunks (lwz r3,4(r3); b ...) packed at 0x82652F00-0x82652F67
+# Thunk table at 0x82652F00: 8-byte forwarders (lwz r3,4(r3); b ...) and 0x18-byte setters
 0x82652F28 = { size = 0x8 }
 0x82652F48 = { size = 0x8 }
-0x82652F50 = { size = 0x8 }
-0x82652F58 = { size = 0x8 }
-0x82652F60 = { size = 0x8 }
+0x82652F50 = { size = 0x18 }  # lwz r11,4(r3); lwz r11,1596(r11); cmpwi; beqlr; stfs; blr
+
+# Function pointer targets found in data sections by tools/find_fn_pointers.py
+0x82278F08 = { name = "sub_82278F08" }  # referenced at 0x82002E88
+0x822929B8 = { name = "sub_822929B8" }  # referenced at 0x82EF723C
+0x82293158 = { name = "sub_82293158" }  # referenced at 0x82EF72D8
+0x82293190 = { name = "sub_82293190" }  # referenced at 0x82EF72DC
+0x822931C8 = { name = "sub_822931C8" }  # referenced at 0x82EF72CC
+0x82293200 = { name = "sub_82293200" }  # referenced at 0x82EF7390
+0x82318358 = { name = "sub_82318358" }  # referenced at 0x82EFEB4C
+0x82318390 = { name = "sub_82318390" }  # referenced at 0x82EFEB50
+0x823183C8 = { name = "sub_823183C8" }  # referenced at 0x82EFEB54
+0x82318400 = { name = "sub_82318400" }  # referenced at 0x82EFEB58
+0x82318438 = { name = "sub_82318438" }  # referenced at 0x82EFEB5C
+0x823ACA60 = { name = "sub_823ACA60" }  # referenced at 0x8202BA9C
+0x823ACE68 = { name = "sub_823ACE68" }  # referenced at 0x8202BC6C
+0x823ACE90 = { name = "sub_823ACE90" }  # referenced at 0x8202BC70
+0x823ACEB8 = { name = "sub_823ACEB8" }  # referenced at 0x8202BC74
+0x823ACEE0 = { name = "sub_823ACEE0" }  # referenced at 0x8202BC78
+0x823AD308 = { name = "sub_823AD308" }  # referenced at 0x8202BCAC
+0x823AD328 = { name = "sub_823AD328" }  # referenced at 0x82002780
+0x824EE780 = { name = "sub_824EE780" }  # referenced at 0x820738D4
+0x824EE880 = { name = "sub_824EE880" }  # referenced at 0x820738E8
+0x82504B88 = { name = "sub_82504B88" }  # referenced at 0x82073DEC
+0x82535258 = { name = "sub_82535258" }  # referenced at 0x82074D2C
+0x82535270 = { name = "sub_82535270" }  # referenced at 0x82074D34
+0x82535288 = { name = "sub_82535288" }  # referenced at 0x82074D3C
+0x8253CF18 = { name = "sub_8253CF18" }  # referenced at 0x8207A78C
+0x826419F0 = { name = "sub_826419F0" }  # referenced at 0x8209EA7C
+0x82675E00 = { name = "sub_82675E00" }  # referenced at 0x820A9A78
+0x826C1968 = { name = "sub_826C1968" }  # referenced at 0x82F52D20
+0x8278B098 = { name = "sub_8278B098" }  # referenced at 0x820CC6EC
+0x827B41E8 = { name = "sub_827B41E8" }  # referenced at 0x820D0454
+0x827B4270 = { name = "sub_827B4270" }  # referenced at 0x820D046C
+0x827B42E8 = { name = "sub_827B42E8" }  # referenced at 0x820D0480
+0x827C0100 = { name = "sub_827C0100" }  # referenced at 0x820D0534
+0x827C0108 = { name = "sub_827C0108" }  # referenced at 0x820D0538
+0x8283F938 = { name = "sub_8283F938" }  # referenced at 0x820DC528
+0x8293A850 = { name = "sub_8293A850" }  # referenced at 0x8210A4E8
+0x82950A08 = { name = "sub_82950A08" }  # referenced at 0x82112948
+0x82A0C7B8 = { name = "sub_82A0C7B8" }  # referenced at 0x8212ADBC
+0x82A0FA68 = { name = "sub_82A0FA68" }  # referenced at 0x8212CB18
+0x82A0FA80 = { name = "sub_82A0FA80" }  # referenced at 0x8212CB40
+0x82A10FB0 = { name = "sub_82A10FB0" }  # referenced at 0x8212BCD4
+0x82A123E8 = { name = "sub_82A123E8" }  # referenced at 0x8212CEF8
+0x82A14ED8 = { name = "sub_82A14ED8" }  # referenced at 0x8212C16C
+0x82A14F60 = { name = "sub_82A14F60" }  # referenced at 0x8212C154
+0x82A16480 = { name = "sub_82A16480" }  # referenced at 0x8212D178
+0x82A19598 = { name = "sub_82A19598" }  # referenced at 0x8212DF38
+0x82A195B8 = { name = "sub_82A195B8" }  # referenced at 0x8212DF3C
+0x82A2E048 = { name = "sub_82A2E048" }  # referenced at 0x8212BF70
+0x82A3A6F8 = { name = "sub_82A3A6F8" }  # referenced at 0x8212C56C
+0x82A42198 = { name = "sub_82A42198" }  # referenced at 0x8212C998
+0x82A73B48 = { name = "sub_82A73B48" }  # referenced at 0x8212D8F4
+0x82A82320 = { name = "sub_82A82320" }  # referenced at 0x82134790
+0x82A8F500 = { name = "sub_82A8F500" }  # referenced at 0x82134278
+0x82B055D8 = { name = "sub_82B055D8" }  # referenced at 0x8217253C
+0x82B05E18 = { name = "sub_82B05E18" }  # referenced at 0x82172590
+0x82B325E0 = { name = "sub_82B325E0" }  # referenced at 0x82F8886C
+0x82B32600 = { name = "sub_82B32600" }  # referenced at 0x82F88870
+0x82B32620 = { name = "sub_82B32620" }  # referenced at 0x82F88878
+0x82C03720 = { name = "sub_82C03720" }  # referenced at 0x8217F360
+0x82C92B78 = { name = "sub_82C92B78" }  # referenced at 0x821940A8
+0x82C92BC0 = { name = "sub_82C92BC0" }  # referenced at 0x8219409C
+0x82C97628 = { name = "sub_82C97628" }  # referenced at 0x8219526C
+0x82C97630 = { name = "sub_82C97630" }  # referenced at 0x82195288
+0x82C98698 = { name = "sub_82C98698" }  # referenced at 0x82195278
+0x82C99950 = { name = "sub_82C99950" }  # referenced at 0x821952C8
+0x82C99958 = { name = "sub_82C99958" }  # referenced at 0x8219535C
+0x82C99990 = { name = "sub_82C99990" }  # referenced at 0x82195358
+0x82C99998 = { name = "sub_82C99998" }  # referenced at 0x82195390
+0x82C999B0 = { name = "sub_82C999B0" }  # referenced at 0x82195384
+0x82CB4A68 = { name = "sub_82CB4A68" }  # referenced at 0x8219773C
+0x82CBC8B8 = { name = "sub_82CBC8B8" }  # referenced at 0x82197DC0
+0x82CBC8D0 = { name = "sub_82CBC8D0" }  # referenced at 0x82197DDC
+0x82CBC8F0 = { name = "sub_82CBC8F0" }  # referenced at 0x82197DD4
+0x82CBCA68 = { name = "sub_82CBCA68" }  # referenced at 0x82197E28
+0x82CBCA88 = { name = "sub_82CBCA88" }  # referenced at 0x82197E2C
+0x82CBCAA8 = { name = "sub_82CBCAA8" }  # referenced at 0x82197E30
+0x82CBCAC8 = { name = "sub_82CBCAC8" }  # referenced at 0x82197E34
+0x82CBCAE8 = { name = "sub_82CBCAE8" }  # referenced at 0x82197E38
+0x82CBCB08 = { name = "sub_82CBCB08" }  # referenced at 0x82197E3C
+0x82CBCB28 = { name = "sub_82CBCB28" }  # referenced at 0x82197E40
+0x82CBCB48 = { name = "sub_82CBCB48" }  # referenced at 0x82197E44
+0x82CBCB68 = { name = "sub_82CBCB68" }  # referenced at 0x82197E48
+0x82CBCB88 = { name = "sub_82CBCB88" }  # referenced at 0x82197E4C
+0x82D938F8 = { name = "sub_82D938F8" }  # referenced at 0x821DD944
+0x82DB2B98 = { name = "sub_82DB2B98" }  # referenced at 0x821E5934
+0x82DCDE78 = { name = "sub_82DCDE78" }  # referenced at 0x821ECB2C
+0x82DCDE80 = { name = "sub_82DCDE80" }  # referenced at 0x821ECB40
+0x82DCDEB8 = { name = "sub_82DCDEB8" }  # referenced at 0x821ECB3C
