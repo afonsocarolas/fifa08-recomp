@@ -6,6 +6,8 @@
 
 #include <rex/rex_app.h>
 
+#include "rdoc_capture.h"
+
 class Fifa08App : public rex::ReXApp {
  public:
   using rex::ReXApp::ReXApp;
@@ -21,7 +23,7 @@ class Fifa08App : public rex::ReXApp {
   // void OnPreSetup(rex::RuntimeConfig& config) override {}
   // void OnLoadXexImage(std::string& xex_image) override {}
   // void OnPostLoadXexImage() override {}
-  // void OnPostSetup() override {}
+  void OnPostSetup() override { fifa08::StartTimedRenderDocCaptures(); }
   // void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {}
   // std::unique_ptr<rex::ui::ImGuiDialog> CreateAchievementsOverlay() override;
   // std::unique_ptr<rex::ui::AchievementNotificationDialog>

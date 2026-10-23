@@ -16,3 +16,6 @@ third_party/
 # Launcher build output
 launcher/bin/
 launcher/obj/
+
+# Local RenderDoc job settings
+tools/rdoc_job.json
