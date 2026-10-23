@@ -6,6 +6,7 @@
 
 #include <rex/rex_app.h>
 
+#include "debug_hooks.h"
 #include "rdoc_capture.h"
 
 class Fifa08App : public rex::ReXApp {

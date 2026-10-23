@@ -1,0 +1,9 @@
+# Debug probes (see src/debug_hooks.h). Each logs lines starting with "[dbg]".
+
+# sub_82715170 (animation rig channel table builder), just before the final
+# sub_82714BB8 call: r28 = finished table (channel name -> bone index,
+# +332 LHandRig, +336 RHandRig), r26 = skeleton/rig source.
+[[midasm_hook]]
+address = 0x82716314
+name = "Dbg_RigTable"
+registers = ["r26", "r28"]
