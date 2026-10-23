@@ -1,0 +1,105 @@
+diff --git a/include/rex/ppc/intrinsics.h b/include/rex/ppc/intrinsics.h
+index 3c2fe09..d55f048 100644
+--- a/include/rex/ppc/intrinsics.h
++++ b/include/rex/ppc/intrinsics.h
+@@ -19,6 +19,7 @@
+ 
+ #include <simde/x86/avx.h>
+ #include <simde/x86/avx2.h>
++#include <simde/x86/fma.h>
+ #include <simde/x86/sse.h>
+ #include <simde/x86/sse4.1.h>
+ 
+diff --git a/src/codegen/builders/vector.cpp b/src/codegen/builders/vector.cpp
+index cbdd7f7..64c1c76 100644
+--- a/src/codegen/builders/vector.cpp
++++ b/src/codegen/builders/vector.cpp
+@@ -90,24 +90,25 @@ bool build_vmulfp128(BuilderContext& ctx) {
+   return true;
+ }
+ 
++// VMX multiply-adds are fused on the Xenon (one rounding), so use FMA rather
++// than a separate multiply and add. Build the generated code with -mfma for
++// native instructions; without it simde falls back to scalar fmaf.
+ bool build_vmaddfp(BuilderContext& ctx) {
+   ctx.emit_set_flush_mode(true);
+   ctx.println(
+-      "\tsimde_mm_store_ps({}.f32, simde_mm_add_ps(simde_mm_mul_ps(simde_mm_load_ps({}.f32), "
+-      "simde_mm_load_ps({}.f32)), simde_mm_load_ps({}.f32)));",
++      "\tsimde_mm_store_ps({}.f32, simde_mm_fmadd_ps(simde_mm_load_ps({}.f32), "
++      "simde_mm_load_ps({}.f32), simde_mm_load_ps({}.f32)));",
+       ctx.v(ctx.insn.operands[0]), ctx.v(ctx.insn.operands[1]), ctx.v(ctx.insn.operands[2]),
+       ctx.v(ctx.insn.operands[3]));
+   return true;
+ }
+ 
+ bool build_vnmsubfp(BuilderContext& ctx) {
+-  // vnmsubfp: vD = -(vA * vB - vC) - negation done by XOR with sign bit (0x80000000)
++  // vnmsubfp: vD = -(vA * vB - vC), computed fused as -(vA * vB) + vC
+   ctx.emit_set_flush_mode(true);
+   ctx.println(
+-      "\tsimde_mm_store_ps({}.f32, "
+-      "simde_mm_xor_ps(simde_mm_sub_ps(simde_mm_mul_ps(simde_mm_load_ps({}.f32), "
+-      "simde_mm_load_ps({}.f32)), simde_mm_load_ps({}.f32)), "
+-      "simde_mm_castsi128_ps(simde_mm_set1_epi32(int(0x80000000)))));",
++      "\tsimde_mm_store_ps({}.f32, simde_mm_fnmadd_ps(simde_mm_load_ps({}.f32), "
++      "simde_mm_load_ps({}.f32), simde_mm_load_ps({}.f32)));",
+       ctx.v(ctx.insn.operands[0]), ctx.v(ctx.insn.operands[1]), ctx.v(ctx.insn.operands[2]),
+       ctx.v(ctx.insn.operands[3]));
+   return true;
+@@ -1098,14 +1099,14 @@ bool build_vpkuhus(BuilderContext& ctx) {
+   // NOTE(tomc): _mm_packus_epi16 treats inputs as signed, so we need custom saturation for
+   // unsigned. Unsigned halfwords >= 0x8000 would be interpreted as negative and clamped to 0
+   // instead of 0xFF.
++  // vD can alias vA/vB, so pack into vTemp first.
+   for (size_t i = 0; i < 8; i++) {
+-    ctx.println("\t{}.u8[{}] = {}.u16[{}] > 0xFF ? 0xFF : (uint8_t){}.u16[{}];",
+-                ctx.v(ctx.insn.operands[0]), 15 - i, ctx.v(ctx.insn.operands[1]), 7 - i,
+-                ctx.v(ctx.insn.operands[1]), 7 - i);
+-    ctx.println("\t{}.u8[{}] = {}.u16[{}] > 0xFF ? 0xFF : (uint8_t){}.u16[{}];",
+-                ctx.v(ctx.insn.operands[0]), 7 - i, ctx.v(ctx.insn.operands[2]), 7 - i,
+-                ctx.v(ctx.insn.operands[2]), 7 - i);
++    ctx.println("\t{}.u8[{}] = {}.u16[{}] > 0xFF ? 0xFF : (uint8_t){}.u16[{}];", ctx.v_temp(),
++                15 - i, ctx.v(ctx.insn.operands[1]), 7 - i, ctx.v(ctx.insn.operands[1]), 7 - i);
++    ctx.println("\t{}.u8[{}] = {}.u16[{}] > 0xFF ? 0xFF : (uint8_t){}.u16[{}];", ctx.v_temp(),
++                7 - i, ctx.v(ctx.insn.operands[2]), 7 - i, ctx.v(ctx.insn.operands[2]), 7 - i);
+   }
++  ctx.println("\t{} = {};", ctx.v(ctx.insn.operands[0]), ctx.v_temp());
+   return true;
+ }
+ 
+@@ -1126,14 +1127,14 @@ bool build_vpkuwus(BuilderContext& ctx) {
+ 
+   // NOTE(tomc): _mm_packus_epi32 treats inputs as signed, so we need custom saturation for unsigned
+   // Saturate each u32 to [0, 0xFFFF], then pack to u16
++  // vD can alias vA/vB, so pack into vTemp first.
+   for (size_t i = 0; i < 4; i++) {
+-    ctx.println("\t{}.u16[{}] = {}.u32[{}] > 0xFFFF ? 0xFFFF : (uint16_t){}.u32[{}];",
+-                ctx.v(ctx.insn.operands[0]), 7 - i, ctx.v(ctx.insn.operands[1]), 3 - i,
+-                ctx.v(ctx.insn.operands[1]), 3 - i);
+-    ctx.println("\t{}.u16[{}] = {}.u32[{}] > 0xFFFF ? 0xFFFF : (uint16_t){}.u32[{}];",
+-                ctx.v(ctx.insn.operands[0]), 3 - i, ctx.v(ctx.insn.operands[2]), 3 - i,
+-                ctx.v(ctx.insn.operands[2]), 3 - i);
++    ctx.println("\t{}.u16[{}] = {}.u32[{}] > 0xFFFF ? 0xFFFF : (uint16_t){}.u32[{}];", ctx.v_temp(),
++                7 - i, ctx.v(ctx.insn.operands[1]), 3 - i, ctx.v(ctx.insn.operands[1]), 3 - i);
++    ctx.println("\t{}.u16[{}] = {}.u32[{}] > 0xFFFF ? 0xFFFF : (uint16_t){}.u32[{}];", ctx.v_temp(),
++                3 - i, ctx.v(ctx.insn.operands[2]), 3 - i, ctx.v(ctx.insn.operands[2]), 3 - i);
+   }
++  ctx.println("\t{} = {};", ctx.v(ctx.insn.operands[0]), ctx.v_temp());
+   return true;
+ }
+ 
+diff --git a/tests/ppc/CMakeLists.txt b/tests/ppc/CMakeLists.txt
+index 9933e95..14d2ece 100644
+--- a/tests/ppc/CMakeLists.txt
++++ b/tests/ppc/CMakeLists.txt
+@@ -61,6 +61,9 @@ target_include_directories(ppc_tests PRIVATE
+     ${PPC_GEN_DIR}
+ )
+ 
++# Native FMA so fused VMX multiply-adds (vmaddfp/vnmsubfp) are fused here too.
++target_compile_options(ppc_tests PRIVATE -mfma)
++
+ target_link_libraries(ppc_tests PRIVATE
+     simde
+     rexruntime
