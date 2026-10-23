@@ -6,7 +6,7 @@ $run = Join-Path $PSScriptRoot "out\build\win-amd64-release"
 $assets = Join-Path $PSScriptRoot "assets"
 Remove-Item (Join-Path $run "run.log") -ErrorAction SilentlyContinue
 $screen = if ($Fullscreen) { @("--fullscreen") } else { @("--no-fullscreen", "--window_width=1280", "--window_height=720") }
-$args0 = @("--game_data_root=$assets", "--gpu_plugin=xenos") + $screen + @("--log_level=info", "--log_file=run.log")
+$args0 = @("--game_data_root=$assets", "--gpu_plugin=xenos", "--edram_ownership_no_wrap=true") + $screen + @("--log_level=info", "--log_file=run.log")
 $p = Start-Process "$run\fifa08.exe" -WorkingDirectory $run -ArgumentList ($args0 + $Extra) -PassThru
 if ($Seconds -gt 0) {
     if (-not $p.WaitForExit($Seconds * 1000)) { Stop-Process -Id $p.Id -Force; "stopped after $Seconds s" }

@@ -20,3 +20,18 @@
 0x82C99960 = { name = "sub_82C99960" }
 0x82B427A0 = { name = "sub_82B427A0" }
 0x82ACD868 = { name = "sub_82ACD868" }
+0x826832B0 = { name = "sub_826832B0" }
+0x82A0C850 = { name = "sub_82A0C850" }
+0x82DE36D8 = { name = "sub_82DE36D8" }
+0x828B50E0 = { name = "sub_828B50E0" }
+0x827B4D18 = { name = "sub_827B4D18" }
+0x82652F30 = { name = "sub_82652F30" }
+0x82652F38 = { name = "sub_82652F38" }
+0x82652F20 = { name = "sub_82652F20" }
+0x82652F40 = { name = "sub_82652F40" }
+# 8-byte forwarding thunks (lwz r3,4(r3); b ...) packed at 0x82652F00-0x82652F67
+0x82652F28 = { size = 0x8 }
+0x82652F48 = { size = 0x8 }
+0x82652F50 = { size = 0x8 }
+0x82652F58 = { size = 0x8 }
+0x82652F60 = { size = 0x8 }
