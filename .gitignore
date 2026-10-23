@@ -19,3 +19,6 @@ launcher/obj/
 
 # Local RenderDoc job settings
 tools/rdoc_job.json
+
+# Scratch output from tools and test runs
+out-*.txt

@@ -1,1 +1,0 @@
-Launching 'C:\Users\User\Documents\fifa08-recomp\game\out\build\win-amd64-release\fifa08.exe' with params: --game_data_root=C:\Users\User\Documents\fifa08-recomp\game\assets --gpu_plugin=xenos --no-fullscreen
