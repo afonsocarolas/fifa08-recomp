@@ -1,0 +1,117 @@
+<Window x:Class="Fifa08Launcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FIFA 08 Launcher" Width="820" SizeToContent="Height"
+        ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Bg}" Foreground="{StaticResource Text}" FontSize="13">
+  <StackPanel Margin="20">
+    <TextBlock Text="FIFA 08" FontSize="26" FontWeight="Bold"/>
+    <TextBlock Text="Xbox 360 version, running natively on PC" Style="{StaticResource Hint}" Margin="0,2,0,16"/>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="12"/>
+        <ColumnDefinition/>
+      </Grid.ColumnDefinitions>
+
+      <StackPanel Grid.Column="0">
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="DISPLAY" Style="{StaticResource Section}"/>
+            <StackPanel Orientation="Horizontal">
+              <RadioButton x:Name="FullscreenRadio" Content="Fullscreen" GroupName="mode" Checked="OnModeChanged"/>
+              <RadioButton x:Name="WindowRadio" Content="Window" GroupName="mode" Checked="OnModeChanged"/>
+            </StackPanel>
+            <Grid Margin="0,10,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100"/>
+                <ColumnDefinition/>
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+              </Grid.RowDefinitions>
+              <TextBlock Text="Window size" VerticalAlignment="Center"/>
+              <ComboBox x:Name="WindowSizeBox" Grid.Column="1" HorizontalAlignment="Left">
+                <ComboBoxItem Content="1280x720"/>
+                <ComboBoxItem Content="1600x900"/>
+                <ComboBoxItem Content="1920x1080"/>
+                <ComboBoxItem Content="2560x1440"/>
+              </ComboBox>
+              <TextBlock Grid.Row="1" Text="Monitor" VerticalAlignment="Center" Margin="0,8,0,0"/>
+              <ComboBox x:Name="MonitorBox" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="RESOLUTION" Style="{StaticResource Section}"/>
+            <StackPanel Orientation="Horizontal">
+              <RadioButton x:Name="Scale1" Content="720p (original)" GroupName="scale"/>
+              <RadioButton x:Name="Scale2" Content="1440p" GroupName="scale"/>
+              <RadioButton x:Name="Scale3" Content="4K" GroupName="scale"/>
+            </StackPanel>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="What the game draws at. 720p is how the Xbox 360 ran it and is the fastest; 1440p and 4K are sharper but cost FPS."/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <StackPanel Grid.Column="2">
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="UPSCALING" Style="{StaticResource Section}"/>
+            <StackPanel Orientation="Horizontal">
+              <RadioButton x:Name="UpBilinear" Content="Off" GroupName="up" Checked="OnUpscalingChanged"/>
+              <RadioButton x:Name="UpFsr" Content="AMD FSR" GroupName="up" Checked="OnUpscalingChanged"/>
+              <RadioButton x:Name="UpCas" Content="AMD CAS" GroupName="up" Checked="OnUpscalingChanged"/>
+            </StackPanel>
+            <Grid Margin="0,10,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="44"/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="Sharpness" VerticalAlignment="Center"/>
+              <Slider x:Name="SharpnessSlider" Grid.Column="1" Minimum="0" Maximum="100"
+                      TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                      ValueChanged="OnSharpnessChanged"/>
+              <TextBlock x:Name="SharpnessText" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+            <TextBlock Style="{StaticResource Hint}"
+                       Text="How the picture is stretched to your screen. FSR upscales with edge detection and sharpening; CAS only sharpens."/>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="FRAME RATE" Style="{StaticResource Section}"/>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition/>
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="Limit" VerticalAlignment="Center"/>
+              <ComboBox x:Name="FrameRateBox" Grid.Column="1" HorizontalAlignment="Left">
+                <ComboBoxItem Content="30 FPS" Tag="30"/>
+                <ComboBoxItem Content="60 FPS (original)" Tag="60"/>
+                <ComboBoxItem Content="120 FPS" Tag="120"/>
+                <ComboBoxItem Content="144 FPS" Tag="144"/>
+                <ComboBoxItem Content="165 FPS" Tag="165"/>
+                <ComboBoxItem Content="240 FPS" Tag="240"/>
+                <ComboBoxItem Content="Unlimited (no V-Sync)" Tag="0"/>
+              </ComboBox>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+
+    <TextBlock x:Name="StatusText" Style="{StaticResource Hint}" Margin="2,0,0,10"/>
+    <Button x:Name="PlayButton" Content="PLAY" Height="46" FontSize="18" FontWeight="Bold"
+            Background="{StaticResource Accent}" Foreground="#14171C" BorderThickness="0"
+            Click="OnPlay" Cursor="Hand"/>
+  </StackPanel>
+</Window>

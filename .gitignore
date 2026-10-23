@@ -12,3 +12,7 @@ __pycache__/
 
 # Cloned dependencies and references
 third_party/
+
+# Launcher build output
+launcher/bin/
+launcher/obj/

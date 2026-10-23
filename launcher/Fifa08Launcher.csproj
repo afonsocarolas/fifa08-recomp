@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- For System.Windows.Forms.Screen (monitor list) -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Run on whatever newer desktop runtime is installed (6, 8, ...) -->
+    <RollForward>Major</RollForward>
+    <AssemblyName>FIFA08 Launcher</AssemblyName>
+    <RootNamespace>Fifa08Launcher</RootNamespace>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+</Project>

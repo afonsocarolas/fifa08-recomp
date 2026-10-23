@@ -40,3 +40,20 @@ py -I tools/xex_info.py game/assets/default.xex           # title ID, version, h
 Windows, Visual Studio 2022 with *Desktop development with C++*,
 *C++ Clang Compiler for Windows* (20+) and *MSBuild support for LLVM (clang-cl)*,
 plus CMake 3.25+ and Ninja.
+
+## Launcher
+
+`launcher/` is a small WPF app (.NET 6, runs on any newer .NET desktop runtime):
+fullscreen or window, monitor, render resolution (720p / 1440p / 4K), upscaling
+(off, AMD FSR, AMD CAS with sharpness) and a frame-rate limit (30 to 240, or unlimited).
+Settings are saved in `launcher.json` next to it.
+
+```
+dotnet build launcher -c Release
+```
+
+It finds `fifa08.exe` and the game files either in a player package
+(`bin\fifa08.exe`, `Game\default.xex` next to the launcher) or in this source tree.
+
+FSR and CAS need the SDK built with FidelityFX:
+`cmake --preset win-amd64 -DREXGLUE_ENABLE_FIDELITYFX=ON` (with `patches/sdk-fidelityfx-build.patch`).

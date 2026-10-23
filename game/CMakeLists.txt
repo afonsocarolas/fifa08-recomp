@@ -22,3 +22,12 @@ else()
 endif()
 
 rexglue_setup_target(fifa08 GPU_PLUGINS xenos)
+
+# FSR / CAS (SDK built with REXGLUE_ENABLE_FIDELITYFX=ON): rexruntime needs
+# amd_fidelityfx_dx12.dll at run time; put it next to fifa08.exe.
+if(WIN32 AND TARGET rex::amd_fidelityfx_dx12)
+    add_custom_command(TARGET fifa08 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:rex::amd_fidelityfx_dx12> $<TARGET_FILE_DIR:fifa08>
+        VERBATIM)
+endif()
