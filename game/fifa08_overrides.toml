@@ -1,0 +1,22 @@
+# Function boundaries the analyzer misses: tail-call (b) targets that no
+# discovered function contains. Sizes are filled in when the analyzer can't
+# work them out on its own.
+
+[functions]
+0x82A13620 = { name = "sub_82A13620" }
+0x82C96CD0 = { name = "sub_82C96CD0" }
+0x826FA1A0 = { name = "sub_826FA1A0" }
+0x82558490 = { name = "sub_82558490" }
+0x826C1980 = { name = "sub_826C1980" }
+0x82557F40 = { name = "sub_82557F40" }
+0x82558400 = { name = "sub_82558400" }
+0x82C8F468 = { name = "sub_82C8F468" }
+
+# Indirect call targets (function pointers / vtables) found at run time
+0x82E4CAC8 = { name = "sub_82E4CAC8" }
+0x82ABC4E8 = { name = "sub_82ABC4E8" }
+0x8230FEE8 = { name = "sub_8230FEE8" }
+0x829BE138 = { name = "sub_829BE138" }
+0x82C99960 = { name = "sub_82C99960" }
+0x82B427A0 = { name = "sub_82B427A0" }
+0x82ACD868 = { name = "sub_82ACD868" }
