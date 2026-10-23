@@ -1,0 +1,14 @@
+# Game files from your own disc and the code generated from them: never commit
+game/assets/
+game/generated/
+*.iso
+*.xex
+
+# Build output
+out/
+*.log
+game/out/
+__pycache__/
+
+# Cloned dependencies and references
+third_party/
