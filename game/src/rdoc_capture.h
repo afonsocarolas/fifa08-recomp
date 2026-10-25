@@ -1,5 +1,12 @@
 #pragma once
 
+#ifndef _WIN32
+// Windows-only debugging tool; no-op elsewhere (Android build).
+namespace fifa08 {
+inline void StartTimedRenderDocCaptures() {}
+}  // namespace fifa08
+#else
+
 // Timed RenderDoc frame captures for debugging, e.g.
 //   renderdoccmd capture fifa08.exe ... --rdoc_capture_at=44,48,52 --rdoc_capture_path=C:\caps\port
 // Does nothing unless the game was started under RenderDoc and rdoc_capture_at is set.
@@ -51,3 +58,5 @@ inline void StartTimedRenderDocCaptures() {
 }
 
 }  // namespace fifa08
+
+#endif  // _WIN32

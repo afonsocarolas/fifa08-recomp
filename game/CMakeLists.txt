@@ -10,6 +10,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(generated/rexglue.cmake)
 
+# Cross builds (Android) import an ARM64 rexglue that can't run on the build
+# machine; run codegen with the host SDK's rexglue instead (its output is
+# platform independent).
+if(ANDROID)
+    set(REXGLUE_HOST_CODEGEN
+        "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/rexglue-sdk/out/install/win-amd64/bin/rexglue.exe"
+        CACHE FILEPATH "rexglue executable that runs on the build machine")
+    set_target_properties(rex::rexglue PROPERTIES
+        IMPORTED_LOCATION "${REXGLUE_HOST_CODEGEN}"
+        IMPORTED_LOCATION_RELEASE "${REXGLUE_HOST_CODEGEN}")
+endif()
+
 # Sources
 set(FIFA08_SOURCES
     src/main.cpp
@@ -17,6 +29,10 @@ set(FIFA08_SOURCES
 
 if(WIN32)
     add_executable(fifa08 WIN32 ${FIFA08_SOURCES})
+elseif(ANDROID)
+    # SDL3's Android activity loads the game from libmain.so.
+    add_library(fifa08 SHARED ${FIFA08_SOURCES})
+    set_target_properties(fifa08 PROPERTIES OUTPUT_NAME main)
 else()
     add_executable(fifa08 ${FIFA08_SOURCES})
 endif()

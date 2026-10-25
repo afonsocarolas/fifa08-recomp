@@ -1,0 +1,26 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "android-arm64",
+            "displayName": "Android ARM64 (fifa08 port)",
+            "description": "Cross-build for Android arm64-v8a with the NDK; Vulkan only",
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "toolchainFile": "$env{ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake",
+            "cacheVariables": {
+                "ANDROID_ABI": "arm64-v8a",
+                "ANDROID_PLATFORM": "android-29",
+                "ANDROID_STL": "c++_shared",
+                "CMAKE_CXX_STANDARD": "23",
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
+                "CMAKE_DEFAULT_BUILD_TYPE": "Release",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "REXGLUE_USE_VULKAN": "ON",
+                "REXGLUE_ENABLE_FIDELITYFX": "OFF",
+                "REXGLUE_ENABLE_TRACY": "OFF",
+                "REXGLUE_BUILD_TESTS": "OFF"
+            }
+        }
+    ]
+}

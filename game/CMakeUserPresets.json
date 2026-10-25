@@ -1,0 +1,28 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "android-arm64-release",
+            "displayName": "Android ARM64 Release",
+            "description": "Builds libmain.so for the Android app (needs env ANDROID_NDK_ROOT and the SDK's android-arm64 install)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "toolchainFile": "$env{ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "ANDROID_ABI": "arm64-v8a",
+                "ANDROID_PLATFORM": "android-29",
+                "ANDROID_STL": "c++_shared",
+                "CMAKE_CXX_STANDARD": "23",
+                "rexglue_DIR": "${sourceDir}/../third_party/rexglue-sdk/out/install/android-arm64/lib/cmake/rexglue",
+                "CMAKE_FIND_ROOT_PATH_MODE_PACKAGE": "BOTH"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "android-arm64-release",
+            "configurePreset": "android-arm64-release"
+        }
+    ]
+}

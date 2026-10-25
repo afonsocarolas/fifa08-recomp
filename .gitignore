@@ -22,3 +22,7 @@ tools/rdoc_job.json
 
 # Scratch output from tools and test runs
 out-*.txt
+out-shots/
+out-rdoc-vs/
+/out-shaders/
+/android/out/

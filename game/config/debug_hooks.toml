@@ -7,3 +7,56 @@
 address = 0x82716314
 name = "Dbg_RigTable"
 registers = ["r26", "r28"]
+
+# sub_829510E8 (bone TRS -> matrix palette): r11 = input, 48 bytes per bone,
+# r5 = output palette, 64 bytes per bone, r9 = bone count, r4 = optional mask.
+[[midasm_hook]]
+address = 0x82951114
+name = "Dbg_PosePalette"
+registers = ["r4", "r5", "r9", "r11"]
+
+# sub_826ECD80 (bone matrices -> packed GPU stream), per bone with flag bit 0:
+# just before vpkd3d128 packs the quaternion. v0 = quaternion built from the
+# matrix rows saved at r1+240/256/272 (translation at +288); r14 = bone slot,
+# r25 = where the packed quaternion is stored.
+[[midasm_hook]]
+address = 0x826ED790
+name = "Dbg_BoneQuat"
+registers = ["v0", "r1", "r14", "r25"]
+
+# sub_82420510 (memcpy) entry: r3 = dst, r4 = src, r5 = bytes. Logs copies of
+# the packed bone stream (the range Dbg_BoneQuat recorded).
+[[midasm_hook]]
+address = 0x82420510
+name = "Dbg_Memcpy"
+registers = ["r3", "r4", "r5"]
+
+# sub_826118E8 (bone texture writer): just before blr. r3 = 3 output texels
+# (transpose of rows 0..2 of A x B), r4 = A, r5 = B (4x4 row-major).
+[[midasm_hook]]
+address = 0x826119A4
+name = "Dbg_BoneTexel"
+registers = ["r3", "r4", "r5"]
+
+# sub_82613B90 right after the virtual call that returns the world-matrix array
+# for a skinned object: r3 = array, r11 = the called function, r30 = bind object.
+[[midasm_hook]]
+address = 0x82613D18
+name = "Dbg_SkinArray"
+registers = ["r3", "r11", "r30", "r31", "r29"]
+
+# sub_826E8A08 quaternion decoder: just before the three rotation-row stores.
+# v0 = normalized quaternion, v11/v12/v10 = rows 0/1/2 (scaled by v4/v3/v2),
+# r8 = destination render bone.
+[[midasm_hook]]
+address = 0x826E9440
+name = "Dbg_DecodeQuat"
+registers = ["v0", "v11", "v12", "v10", "v4", "v3", "v2", "r8", "r1"]
+
+# sub_826E8A08 quaternion decoder, after both inputs are normalized:
+# v12 = first quaternion, v0 = second, v5/v6 = blend weights, r8 = destination
+# render bone, r1+80.. = staged half-float records.
+[[midasm_hook]]
+address = 0x826E9370
+name = "Dbg_DecodeInputs"
+registers = ["v12", "v0", "v5", "v6", "r8", "r1"]

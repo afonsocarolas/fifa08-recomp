@@ -1,0 +1,589 @@
+diff --git a/include/rex/chrono/chrono.h b/include/rex/chrono/chrono.h
+index d876846..73f67ea 100644
+--- a/include/rex/chrono/chrono.h
++++ b/include/rex/chrono/chrono.h
+@@ -116,8 +116,8 @@ using XSystemClock = detail::NtSystemClock<detail::Domain::Guest>;
+ 
+ namespace std::chrono {
+ 
+-#ifdef __APPLE__
+-// Apple libc++ does not expose clock_time_conversion or clock_cast.
++#if defined(__APPLE__) || defined(__ANDROID__)
++// Apple and Android libc++ do not expose clock_time_conversion or clock_cast.
+ template <class, class>
+ struct clock_time_conversion {};
+ 
+diff --git a/include/rex/main_android.h b/include/rex/main_android.h
+new file mode 100644
+index 0000000..5d8b21b
+--- /dev/null
++++ b/include/rex/main_android.h
+@@ -0,0 +1,23 @@
++/**
++ * Android helpers used by the POSIX code paths inherited from Xenia.
++ * (Xenia's full main_android.h also handled JNI/activity setup; the ReXGlue
++ * Android build gets that from SDL3, so only the API level query is needed.)
++ */
++
++#pragma once
++
++#include <rex/platform.h>
++
++#if REX_PLATFORM_ANDROID
++#include <android/api-level.h>
++
++namespace rex {
++
++// Android API level of the device the process is running on.
++inline int GetAndroidApiLevel() {
++  static const int level = android_get_device_api_level();
++  return level;
++}
++
++}  // namespace rex
++#endif  // REX_PLATFORM_ANDROID
+diff --git a/include/rex/string/numeric.h b/include/rex/string/numeric.h
+index 85994c7..9675532 100644
+--- a/include/rex/string/numeric.h
++++ b/include/rex/string/numeric.h
+@@ -26,7 +26,7 @@
+ #include <rex/string/utf8.h>
+ #include <rex/vec128.h>
+ 
+-#if REX_PLATFORM_MAC
++#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID
+ #include <locale.h>
+ #endif
+ 
+@@ -114,7 +114,7 @@ inline T ifs(const std::string_view value, bool force_hex) {
+   return result;
+ }
+ 
+-#if REX_PLATFORM_MAC
++#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID
+ template <typename T>
+ inline std::from_chars_result portable_float_from_chars(const char* first, const char* last,
+                                                         T& value) {
+@@ -189,7 +189,7 @@ inline T fpfs(const std::string_view value, bool force_hex) {
+     }
+     std::memcpy(&result, &pun, sizeof(PUN));
+   } else {
+-#if REX_PLATFORM_MAC
++#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID
+     auto [p, error] = portable_float_from_chars(range.data(), range.data() + range.size(), result);
+ #else
+     auto [p, error] = std::from_chars(range.data(), range.data() + range.size(), result,
+@@ -316,7 +316,7 @@ inline vec128_t from_string<vec128_t>(const std::string_view value, bool force_h
+         assert_always();
+         return vec128_t();
+       }
+-#if REX_PLATFORM_MAC
++#if REX_PLATFORM_MAC || REX_PLATFORM_ANDROID
+       auto result = detail::portable_float_from_chars(p, end, v.f32[i]);
+ #else
+       auto result = std::from_chars(p, end, v.f32[i], std::chars_format::general);
+diff --git a/include/rex/thread/fiber.h b/include/rex/thread/fiber.h
+index 352af67..58d94f2 100644
+--- a/include/rex/thread/fiber.h
++++ b/include/rex/thread/fiber.h
+@@ -14,7 +14,12 @@
+ #include <rex/platform.h>
+ #include <cstddef>
+ 
+-#if REX_PLATFORM_LINUX || REX_PLATFORM_MAC
++#if REX_PLATFORM_ANDROID
++// Bionic has no getcontext/makecontext/swapcontext; fiber_posix.cpp switches
++// stacks with a small AArch64 routine instead.
++#include <cstdint>
++#include <vector>
++#elif REX_PLATFORM_LINUX || REX_PLATFORM_MAC
+ #if REX_PLATFORM_MAC && !defined(_XOPEN_SOURCE)
+ // Darwin hides the deprecated ucontext APIs unless _XOPEN_SOURCE is defined
+ // before including <ucontext.h>.
+@@ -50,6 +55,11 @@ struct Fiber {
+   /// Returns the fiber currently executing on this thread, or nullptr.
+   static Fiber* Current() { return tls_current_; }
+ 
++#if REX_PLATFORM_ANDROID
++  /// Entry point used by the AArch64 switch routine (fiber_posix.cpp).
++  static void RunTrampoline() { Trampoline(); }
++#endif
++
+  private:
+   static thread_local Fiber* tls_current_;
+ 
+@@ -57,7 +67,11 @@ struct Fiber {
+   void* handle_ = nullptr;
+   bool is_thread_fiber_ = false;
+ #elif REX_PLATFORM_LINUX || REX_PLATFORM_MAC
++#if REX_PLATFORM_ANDROID
++  void* sp_ = nullptr;  // saved stack pointer while switched out
++#else
+   ucontext_t context_{};
++#endif
+   std::vector<uint8_t> stack_;
+   void (*entry_)(void*) = nullptr;
+   void* arg_ = nullptr;
+diff --git a/include/rex/ui/surface_android.h b/include/rex/ui/surface_android.h
+new file mode 100644
+index 0000000..667505d
+--- /dev/null
++++ b/include/rex/ui/surface_android.h
+@@ -0,0 +1,41 @@
++#pragma once
++/**
++ * Android ANativeWindow surface (SDL3 owns the window; this only borrows it).
++ * Restores the type the Vulkan presenter's REX_PLATFORM_ANDROID path expects.
++ */
++
++#include <android/native_window.h>
++
++#include <rex/ui/surface.h>
++
++namespace rex {
++namespace ui {
++
++class AndroidNativeWindowSurface final : public Surface {
++ public:
++  explicit AndroidNativeWindowSurface(ANativeWindow* window) : window_(window) {}
++
++  TypeIndex GetType() const override { return kTypeIndex_AndroidNativeWindow; }
++  ANativeWindow* window() const { return window_; }
++
++ protected:
++  bool GetSizeImpl(uint32_t& width_out, uint32_t& height_out) const override {
++    if (!window_) {
++      return false;
++    }
++    int width = ANativeWindow_getWidth(window_);
++    int height = ANativeWindow_getHeight(window_);
++    if (width <= 0 || height <= 0) {
++      return false;
++    }
++    width_out = uint32_t(width);
++    height_out = uint32_t(height);
++    return true;
++  }
++
++ private:
++  ANativeWindow* window_;
++};
++
++}  // namespace ui
++}  // namespace rex
+diff --git a/include/rex/ui/windowed_app.h b/include/rex/ui/windowed_app.h
+index 50638d6..87cd08c 100644
+--- a/include/rex/ui/windowed_app.h
++++ b/include/rex/ui/windowed_app.h
+@@ -24,10 +24,9 @@
+ #include <rex/platform.h>
+ #include <rex/ui/windowed_app_context.h>
+ 
+-#if REX_PLATFORM_ANDROID
+-// Multiple apps in a single library instead of separate executables.
+-#define XE_UI_WINDOWED_APPS_IN_LIBRARY 1
+-#endif
++// Xenia's Android build put several apps in one library. ReXGlue's Android
++// build is one app per libmain.so started through SDL3's main, like the
++// desktop executables, so XE_UI_WINDOWED_APPS_IN_LIBRARY stays undefined.
+ 
+ namespace rex {
+ namespace ui {
+diff --git a/src/core/CMakeLists.txt b/src/core/CMakeLists.txt
+index 1ddafd0..cfacb7e 100644
+--- a/src/core/CMakeLists.txt
++++ b/src/core/CMakeLists.txt
+@@ -100,6 +100,9 @@ target_include_directories(rexcore PRIVATE
+ 
+ if(APPLE)
+     target_link_libraries(rexcore PRIVATE pthread)
++elseif(ANDROID)
++    # pthread and rt are part of Bionic's libc.
++    target_link_libraries(rexcore PRIVATE dl log android)
+ elseif(UNIX)
+     target_link_libraries(rexcore PRIVATE pthread rt dl)
+ endif()
+diff --git a/src/core/fiber_posix.cpp b/src/core/fiber_posix.cpp
+index 4fe1ca6..68cb3da 100644
+--- a/src/core/fiber_posix.cpp
++++ b/src/core/fiber_posix.cpp
+@@ -27,6 +27,96 @@ namespace rex::thread {
+ 
+ thread_local Fiber* Fiber::tls_current_ = nullptr;
+ 
++#if REX_PLATFORM_ANDROID
++#if !defined(__aarch64__)
++#error The Android fiber switch is only implemented for arm64-v8a.
++#endif
++
++// Saves the AArch64 callee-saved registers (x19-x30, d8-d15) on the current
++// stack, stores sp in *from_sp, loads to_sp and restores the same frame from
++// it. A new fiber's stack is prepared with such a frame whose x30 points at
++// rex_fiber_start, so the first switch "returns" into the trampoline.
++extern "C" void rex_fiber_switch(void** from_sp, void* to_sp);
++extern "C" void rex_fiber_start();
++
++asm(R"(
++  .text
++  .p2align 2
++  .global rex_fiber_switch
++  .type rex_fiber_switch, %function
++rex_fiber_switch:
++  sub  sp, sp, #160
++  stp  x19, x20, [sp, #0]
++  stp  x21, x22, [sp, #16]
++  stp  x23, x24, [sp, #32]
++  stp  x25, x26, [sp, #48]
++  stp  x27, x28, [sp, #64]
++  stp  x29, x30, [sp, #80]
++  stp  d8,  d9,  [sp, #96]
++  stp  d10, d11, [sp, #112]
++  stp  d12, d13, [sp, #128]
++  stp  d14, d15, [sp, #144]
++  mov  x2, sp
++  str  x2, [x0]
++  mov  sp, x1
++  ldp  x19, x20, [sp, #0]
++  ldp  x21, x22, [sp, #16]
++  ldp  x23, x24, [sp, #32]
++  ldp  x25, x26, [sp, #48]
++  ldp  x27, x28, [sp, #64]
++  ldp  x29, x30, [sp, #80]
++  ldp  d8,  d9,  [sp, #96]
++  ldp  d10, d11, [sp, #112]
++  ldp  d12, d13, [sp, #128]
++  ldp  d14, d15, [sp, #144]
++  add  sp, sp, #160
++  ret
++  .size rex_fiber_switch, .-rex_fiber_switch
++
++  .global rex_fiber_start
++  .type rex_fiber_start, %function
++rex_fiber_start:
++  mov  x29, #0
++  bl   rex_fiber_trampoline
++  brk  #0
++  .size rex_fiber_start, .-rex_fiber_start
++)");
++
++extern "C" void rex_fiber_trampoline() { Fiber::RunTrampoline(); }
++
++Fiber* Fiber::ConvertCurrentThread() {
++  auto* f = new Fiber();
++  f->is_thread_fiber_ = true;  // sp_ is filled in by the first switch away
++  tls_current_ = f;
++  return f;
++}
++
++Fiber* Fiber::Create(size_t stack_size, void (*entry)(void*), void* arg) {
++  auto* f = new Fiber();
++  f->entry_ = entry;
++  f->arg_ = arg;
++  f->stack_.resize(stack_size);
++  // Initial frame at the 16-byte aligned top of the stack: all saved
++  // registers zero except x30 = rex_fiber_start.
++  uintptr_t top = (reinterpret_cast<uintptr_t>(f->stack_.data()) + stack_size) & ~uintptr_t(15);
++  auto* frame = reinterpret_cast<uint64_t*>(top - 160);
++  for (int i = 0; i < 20; ++i) frame[i] = 0;
++  frame[11] = reinterpret_cast<uint64_t>(&rex_fiber_start);  // x30 slot (offset 88)
++  f->sp_ = frame;
++  return f;
++}
++
++/*static*/ void Fiber::Trampoline() {
++  Fiber* f = tls_current_;
++  f->entry_(f->arg_);
++}
++
++void Fiber::SwitchTo(Fiber* target) {
++  Fiber* from = tls_current_;
++  tls_current_ = target;
++  rex_fiber_switch(&from->sp_, target->sp_);
++}
++#else
+ Fiber* Fiber::ConvertCurrentThread() {
+   auto* f = new Fiber();
+   if (getcontext(&f->context_) == -1) {
+@@ -68,6 +158,8 @@ void Fiber::SwitchTo(Fiber* target) {
+   swapcontext(&from->context_, &target->context_);
+ }
+ 
++#endif  // REX_PLATFORM_ANDROID
++
+ void Fiber::Destroy() {
+   // Thread fibers are destroyed from the owning thread itself.
+   if (is_thread_fiber_) {
+diff --git a/src/core/filesystem_posix.cpp b/src/core/filesystem_posix.cpp
+index ef5bdf4..98292ea 100644
+--- a/src/core/filesystem_posix.cpp
++++ b/src/core/filesystem_posix.cpp
+@@ -20,6 +20,8 @@
+ #include <sys/types.h>
+ #include <unistd.h>
+ 
++#include <dlfcn.h>
++
+ #if defined(__APPLE__)
+ #include <mach-o/dyld.h>
+ #endif
+@@ -91,6 +93,15 @@ std::filesystem::path GetExecutablePath() {
+   std::error_code ec;
+   std::filesystem::path canonical_path = std::filesystem::weakly_canonical(executable_path, ec);
+   return ec ? std::filesystem::path(executable_path) : canonical_path;
++#elif REX_PLATFORM_ANDROID
++  // /proc/self/exe is the zygote's app_process64. Report this library's own
++  // path instead: the app's native library directory, where libmain.so and
++  // the GPU plugins are installed.
++  Dl_info info{};
++  if (dladdr(reinterpret_cast<void*>(&GetExecutablePath), &info) && info.dli_fname) {
++    return std::filesystem::path(info.dli_fname);
++  }
++  return {};
+ #else
+   char buff[FILENAME_MAX] = "";
+   readlink("/proc/self/exe", buff, FILENAME_MAX);
+@@ -302,5 +313,19 @@ std::vector<FileInfo> ListFiles(const std::filesystem::path& path) {
+   return result;
+ }
+ 
++#if REX_PLATFORM_ANDROID
++// Opening content:// URIs (Storage Access Framework) needs JNI calls into the
++// app's ContentResolver; the fifa08 Android build keeps the game files at a
++// plain path in app storage instead, so these are stubs for now.
++void AndroidInitialize() {}
++void AndroidShutdown() {}
++
++bool IsAndroidContentUri(const std::string_view source) {
++  return source.substr(0, 10) == "content://";
++}
++
++int OpenAndroidContentFileDescriptor(const std::string_view, const char*) { return -1; }
++#endif  // REX_PLATFORM_ANDROID
++
+ }  // namespace filesystem
+ }  // namespace rex
+diff --git a/src/core/memory_posix.cpp b/src/core/memory_posix.cpp
+index b52bf39..9d8780e 100644
+--- a/src/core/memory_posix.cpp
++++ b/src/core/memory_posix.cpp
+@@ -52,9 +52,10 @@
+ #include <sys/ioctl.h>
+ 
+ #include <linux/ashmem.h>
++#include <android/sharedmem.h>
+ 
+-// TODO(tomc): Android or maybe na. idk
+-// #include "xenia/base/main_android.h"
++
++#include <rex/main_android.h>
+ #endif
+ 
+ namespace rex {
+@@ -433,6 +434,15 @@ FileMappingHandle CreateFileMappingHandle(const std::filesystem::path& path, siz
+                                           PageAccess access, bool commit) {
+ #if REX_PLATFORM_ANDROID
+   // TODO(Triang3l): Check if memfd can be used instead on API 30+.
++#if __ANDROID_MIN_SDK_VERSION__ >= 26
++  // ReXGlue's Android build targets API 29+, where /dev/ashmem is blocked
++  // and ASharedMemory always exists (AndroidInitialize is never called).
++  {
++    int sharedmem_fd = ASharedMemory_create(path.filename().c_str(), length);
++    return sharedmem_fd >= 0 ? static_cast<FileMappingHandle>(sharedmem_fd)
++                             : kFileMappingHandleInvalid;
++  }
++#endif
+   if (android_ASharedMemory_create_) {
+     int sharedmem_fd = android_ASharedMemory_create_(path.c_str(), length);
+     return sharedmem_fd >= 0 ? static_cast<FileMappingHandle>(sharedmem_fd)
+diff --git a/src/core/threading_posix.cpp b/src/core/threading_posix.cpp
+index 9ac8d15..3b49b14 100644
+--- a/src/core/threading_posix.cpp
++++ b/src/core/threading_posix.cpp
+@@ -267,10 +267,16 @@ static sem_t* RexCreateAnonymousSemaphore() {
+ }
+ #endif  // __APPLE__
+ 
++#if REX_PLATFORM_ANDROID
++// Bionic has no robust mutexes, so EOWNERDEAD is never returned and there is
++// nothing to mark consistent.
++static inline int pthread_mutex_consistent(pthread_mutex_t*) { return 0; }
++#endif
++
+ class PosixConditionBase {
+  public:
+   PosixConditionBase() {
+-#if REX_PLATFORM_LINUX
++#if REX_PLATFORM_LINUX && !REX_PLATFORM_ANDROID
+     // Use robust mutexes so waits can recover if owner thread terminates.
+     pthread_mutexattr_t attr;
+     if (pthread_mutexattr_init(&attr) == 0) {
+diff --git a/src/core/timer_queue.cpp b/src/core/timer_queue.cpp
+index 5cfea05..c278e09 100644
+--- a/src/core/timer_queue.cpp
++++ b/src/core/timer_queue.cpp
+@@ -10,7 +10,9 @@
+  */
+ 
+ #include <algorithm>
++#include <atomic>
+ #include <forward_list>
++#include <thread>
+ 
+ #include <disruptorplus/multi_threaded_claim_strategy.hpp>
+ #include <disruptorplus/ring_buffer.hpp>
+@@ -27,6 +29,44 @@ namespace rex::thread {
+ 
+ using WaitItem = TimerQueueWaitItem;
+ 
++#if REX_PLATFORM_ANDROID
++// Android's libc++ only ships std::jthread / std::stop_token as experimental;
++// this is the small subset TimerQueue needs.
++class StopToken {
++ public:
++  explicit StopToken(const std::atomic<bool>* stop) : stop_(stop) {}
++  bool stop_requested() const { return stop_->load(std::memory_order_acquire); }
++
++ private:
++  const std::atomic<bool>* stop_;
++};
++
++class JThread {
++ public:
++  using id = std::thread::id;
++  JThread() = default;
++  JThread(const JThread&) = delete;
++  JThread& operator=(const JThread&) = delete;
++  template <typename F>
++  void Start(F&& f) {
++    thread_ = std::thread([this, f = std::forward<F>(f)]() mutable { f(StopToken(&stop_)); });
++  }
++  ~JThread() {
++    request_stop();
++    if (thread_.joinable()) thread_.join();
++  }
++  void request_stop() { stop_.store(true, std::memory_order_release); }
++  id get_id() const { return thread_.get_id(); }
++
++ private:
++  std::atomic<bool> stop_{false};
++  std::thread thread_;
++};
++#else
++using StopToken = std::stop_token;
++using JThread = std::jthread;
++#endif
++
+ class TimerQueue {
+  public:
+   using clock = WaitItem::clock;
+@@ -39,8 +79,12 @@ class TimerQueue {
+         claim_strategy_(kWaitCount, wait_strategy_),
+         consumed_(wait_strategy_) {
+     claim_strategy_.add_claim_barrier(consumed_);
+-    dispatch_thread_ =
+-        std::jthread([this](std::stop_token stop_token) { TimerThreadMain(stop_token); });
++    auto main = [this](StopToken stop_token) { TimerThreadMain(stop_token); };
++#if REX_PLATFORM_ANDROID
++    dispatch_thread_.Start(main);
++#else
++    dispatch_thread_ = std::jthread(main);
++#endif
+   }
+ 
+   ~TimerQueue() {
+@@ -52,10 +96,10 @@ class TimerQueue {
+     wait_item->Disarm();
+     QueueTimer(std::move(wait_item));
+ 
+-    // std::jthread auto-joins on destruction
++    // JThread auto-joins on destruction
+   }
+ 
+-  void TimerThreadMain(std::stop_token stop_token) {
++  void TimerThreadMain(StopToken stop_token) {
+     dp::sequence_t next_sequence = 0;
+     const auto comp = [](const std::shared_ptr<WaitItem>& left,
+                          const std::shared_ptr<WaitItem>& right) {
+@@ -136,7 +180,7 @@ class TimerQueue {
+     return wait_item_weak;
+   }
+ 
+-  std::jthread::id dispatch_thread_id() const { return dispatch_thread_.get_id(); }
++  JThread::id dispatch_thread_id() const { return dispatch_thread_.get_id(); }
+ 
+  private:
+   // This ring buffer will be used to introduce timers queued by the public API
+@@ -149,7 +193,7 @@ class TimerQueue {
+   // This is a _sorted_ (ascending due_) list of active timers managed by a
+   // dedicated thread
+   std::forward_list<std::shared_ptr<WaitItem>> wait_queue_;
+-  std::jthread dispatch_thread_;
++  JThread dispatch_thread_;
+ };
+ 
+ rex::thread::TimerQueue timer_queue_;
+diff --git a/src/ui/CMakeLists.txt b/src/ui/CMakeLists.txt
+index 5bd3dc5..f276203 100644
+--- a/src/ui/CMakeLists.txt
++++ b/src/ui/CMakeLists.txt
+@@ -146,7 +146,10 @@ if(REXGLUE_USE_VULKAN)
+ endif()
+ 
+ # Platform-specific dependencies
+-if(UNIX AND NOT APPLE)
++if(ANDROID)
++    # No X11/Wayland on Android: SDL3 owns the native window.
++    target_link_libraries(rexui PUBLIC android log)
++elseif(UNIX AND NOT APPLE)
+     find_package(PkgConfig REQUIRED)
+     pkg_check_modules(X11_XCB REQUIRED x11-xcb)
+     # Required, not optional: vulkan/api.h pulls in <wayland-client.h> on every
+diff --git a/src/ui/surface_gnulinux.cpp b/src/ui/surface_gnulinux.cpp
+index c6f5730..ce7f4ed 100644
+--- a/src/ui/surface_gnulinux.cpp
++++ b/src/ui/surface_gnulinux.cpp
+@@ -9,6 +9,9 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <rex/platform.h>
++#if REX_PLATFORM_GNU_LINUX  // X11/Wayland only; Android uses surface_android.h
++
+ #include <cstdlib>
+ 
+ #include <SDL3/SDL.h>
+@@ -42,3 +45,5 @@ bool WaylandSurface::GetSizeImpl(uint32_t& width_out, uint32_t& height_out) cons
+ 
+ }  // namespace ui
+ }  // namespace rex
++
++#endif  // REX_PLATFORM_GNU_LINUX
+diff --git a/src/ui/window_sdl.cpp b/src/ui/window_sdl.cpp
+index 6782cce..bbb8422 100644
+--- a/src/ui/window_sdl.cpp
++++ b/src/ui/window_sdl.cpp
+@@ -34,6 +34,8 @@
+ #include <SDL3/SDL_metal.h>
+ 
+ #include <rex/ui/surface_mac.h>
++#elif REX_PLATFORM_ANDROID
++#include <rex/ui/surface_android.h>
+ #else
+ #include <X11/Xlib-xcb.h>
+ #include <rex/ui/surface_gnulinux.h>
+@@ -447,6 +449,15 @@ std::unique_ptr<Surface> WindowSDL::CreateSurfaceImpl(Surface::TypeFlags allowed
+       SDL_Metal_DestroyView(metal_view);
+     }
+   }
++#elif REX_PLATFORM_ANDROID
++  if (allowed_types & Surface::kTypeFlag_AndroidNativeWindow) {
++    SDL_PropertiesID props = SDL_GetWindowProperties(sdl_window_);
++    auto* native_window = static_cast<ANativeWindow*>(
++        SDL_GetPointerProperty(props, SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr));
++    if (native_window) {
++      return std::make_unique<AndroidNativeWindowSurface>(native_window);
++    }
++  }
+ #else
+   SDL_PropertiesID props = SDL_GetWindowProperties(sdl_window_);
+   if (allowed_types & Surface::kTypeFlag_WaylandSurface) {
