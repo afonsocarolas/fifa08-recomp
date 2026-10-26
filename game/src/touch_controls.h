@@ -64,6 +64,10 @@ constexpr int kNumButtons = int(sizeof(kButtons) / sizeof(kButtons[0]));
 constexpr float kStickRadius = 0.13f;  // screen heights
 constexpr int kStick = -1;              // finger owner id for the stick
 constexpr Uint64 kMinPressMs = 150;
+// The SDK's SDL input driver only learns about gamepads from "gamepad added"
+// events, which it starts watching a moment after the dialogs are created, so
+// the virtual gamepad is attached this long after Start().
+constexpr Uint64 kAttachDelayMs = 1500;
 
 struct State {
   std::mutex mutex;
@@ -96,7 +100,9 @@ inline void ApplyLocked(State& s) {
     if (b.button != SDL_GAMEPAD_BUTTON_INVALID) {
       SDL_SetJoystickVirtualButton(s.joystick, b.button, down);
     } else {
-      SDL_SetJoystickVirtualAxis(s.joystick, b.trigger, down ? 32767 : 0);
+      // Rest at the bottom of the axis: with a full-range trigger mapping, 0
+      // would read as half pressed.
+      SDL_SetJoystickVirtualAxis(s.joystick, b.trigger, down ? SDL_JOYSTICK_AXIS_MAX : SDL_JOYSTICK_AXIS_MIN);
     }
   }
 }
@@ -198,12 +204,41 @@ inline void SDLCALL OnUpdate(void*) {
   ApplyLocked(s);
 }
 
+// Creates and opens the virtual gamepad. Called without our mutex held: OnUpdate
+// takes it while SDL holds the joystick lock, so the lock order must always be
+// joystick lock -> our mutex.
+inline void AttachGamepad() {
+  SDL_VirtualJoystickDesc desc;
+  SDL_INIT_INTERFACE(&desc);
+  desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+  desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+  desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+  desc.name = "Touch Controls";
+  desc.Update = OnUpdate;
+  SDL_JoystickID id = SDL_AttachVirtualJoystick(&desc);
+  if (!id) {
+    REXLOG_ERROR("Touch controls: could not create the virtual gamepad: {}", SDL_GetError());
+    return;
+  }
+  SDL_Joystick* joystick = SDL_OpenJoystick(id);
+  {
+    std::lock_guard lock(S().mutex);
+    S().joystick = joystick;
+  }
+  REXLOG_INFO("Touch controls: virtual gamepad {} attached", id);
+}
+
 class Overlay final : public rex::ui::ImGuiDialog {
  public:
-  explicit Overlay(rex::ui::ImGuiDrawer* drawer) : ImGuiDialog(drawer) {}
+  explicit Overlay(rex::ui::ImGuiDrawer* drawer)
+      : ImGuiDialog(drawer), attach_at_(SDL_GetTicks() + kAttachDelayMs) {}
 
  protected:
   void OnDraw(ImGuiIO& io) override {
+    if (!attached_ && SDL_GetTicks() >= attach_at_) {
+      attached_ = true;
+      AttachGamepad();
+    }
     const float w = io.DisplaySize.x, h = io.DisplaySize.y;
     if (w <= 0 || h <= 0) return;
     State& s = S();
@@ -234,37 +269,25 @@ class Overlay final : public rex::ui::ImGuiDialog {
     ImVec2 knob(base.x + s.stick_dx * r, base.y + s.stick_dy * r);
     dl->AddCircleFilled(knob, r * 0.45f, IM_COL32(255, 255, 255, s.stick_active ? 170 : 70), 48);
   }
+
+ private:
+  Uint64 attach_at_;
+  bool attached_ = false;
 };
 
-// Creates the virtual gamepad and the overlay. Call once, after SDL is up.
+// Shows the overlay and starts listening for fingers; the virtual gamepad
+// itself is attached by the overlay after kAttachDelayMs. Call once, after SDL
+// is up.
 inline void Start(rex::ui::ImGuiDrawer* drawer) {
   if (!REXCVAR_GET(touch_controls) || !drawer) return;
-  SDL_InitSubSystem(SDL_INIT_GAMEPAD);
-
-  SDL_VirtualJoystickDesc desc;
-  SDL_INIT_INTERFACE(&desc);
-  desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
-  desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
-  desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
-  desc.name = "Touch Controls";
-  desc.Update = OnUpdate;
-  SDL_JoystickID id = SDL_AttachVirtualJoystick(&desc);
-  if (!id) {
-    REXLOG_ERROR("Touch controls: could not create the virtual gamepad: {}", SDL_GetError());
-    return;
-  }
-  // Open outside our mutex: OnUpdate takes it while SDL holds the joystick
-  // lock, so the lock order must always be joystick lock -> our mutex.
-  SDL_Joystick* joystick = SDL_OpenJoystick(id);
-  {
-    std::lock_guard lock(S().mutex);
-    S().joystick = joystick;
-  }
+  // Joystick only: initializing the gamepad subsystem here, before the SDK's
+  // input driver does, would also swallow the "gamepad added" events it relies on.
+  SDL_InitSubSystem(SDL_INIT_JOYSTICK);
   // Fingers drive the pad; don't also turn them into mouse clicks.
   SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
   SDL_AddEventWatch(OnEvent, nullptr);
   new Overlay(drawer);  // owned by the drawer
-  REXLOG_INFO("Touch controls enabled (virtual gamepad {})", id);
+  REXLOG_INFO("Touch controls enabled");
 }
 
 }  // namespace fifa08::touch

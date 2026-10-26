@@ -3,7 +3,7 @@
 #
 # Needs (all under third_party/android): JDK 17, the Android SDK with
 # platforms;android-35 and build-tools;35.0.0, and the NDK (for libc++_shared.so).
-# Libraries come from game/out/build/android-arm64-release and the SDK's
+# Libraries come from the game build (see GAME_LIBS below) and the SDK's
 # out/install/android-arm64. Signs with a local debug key (android/out/debug.keystore).
 #
 # Usage: bash tools/build_apk.sh
@@ -16,7 +16,11 @@ BT="$A/sdk/build-tools/35.0.0"
 ANDROID_JAR="$A/sdk/platforms/android-35/android.jar"
 NDK_LIBCXX="$A/android-ndk-r28c/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so"
 SDL_JAVA="$ROOT/third_party/rexglue-sdk/thirdparty/sdl3/android-project/app/src/main/java"
-GAME_LIBS="$ROOT/game/out/build/android-arm64-release"
+# Game build: the XenonRecomp one (android-arm64-xenon) when present, else the
+# ReXGlue one; override with GAME_LIBS=<build folder>.
+GAME_LIBS="${GAME_LIBS:-$ROOT/game/out/build/android-arm64-xenon}"
+[ -f "$GAME_LIBS/libmain.so" ] || GAME_LIBS="$ROOT/game/out/build/android-arm64-release"
+echo "game libraries: $GAME_LIBS"
 SDK_LIBS="$ROOT/third_party/rexglue-sdk/out/install/android-arm64/lib"
 APP="$ROOT/android"
 OUT="$APP/out"
