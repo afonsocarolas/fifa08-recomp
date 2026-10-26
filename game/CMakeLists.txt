@@ -10,6 +10,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(generated/rexglue.cmake)
 
+# Build the game from XenonRecomp's output (xenon/ppc, see xenon/README.md) instead
+# of ReXGlue's generated code. The ReXGlue runtime is used either way.
+option(FIFA08_USE_XENONRECOMP "Use XenonRecomp's recompiled code" OFF)
+if(FIFA08_USE_XENONRECOMP)
+    set(FIFA08_XENON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../xenon")
+    file(GLOB FIFA08_XENON_SOURCES "${FIFA08_XENON_DIR}/ppc/ppc_recomp.*.cpp")
+    if(NOT FIFA08_XENON_SOURCES)
+        message(FATAL_ERROR "No XenonRecomp output in ${FIFA08_XENON_DIR}/ppc; run XenonRecomp first")
+    endif()
+    set(REXGLUE_ENTRYPOINT_GENERATED_SOURCES
+        ${FIFA08_XENON_SOURCES}
+        "${FIFA08_XENON_DIR}/ppc/ppc_func_mapping.cpp"
+        "${FIFA08_XENON_DIR}/xenon_init.cpp")
+endif()
+
 # Cross builds (Android) import an ARM64 rexglue that can't run on the build
 # machine; run codegen with the host SDK's rexglue instead (its output is
 # platform independent).
@@ -38,6 +53,12 @@ else()
 endif()
 
 rexglue_setup_target(fifa08 GPU_PLUGINS xenos)
+
+if(FIFA08_USE_XENONRECOMP)
+    target_include_directories(fifa08_recomp PRIVATE "${FIFA08_XENON_DIR}")
+    set_source_files_properties(${REXGLUE_ENTRYPOINT_GENERATED_SOURCES}
+        PROPERTIES COMPILE_OPTIONS "${REXGLUE_RECOMP_OPTIONS}")
+endif()
 
 # FSR / CAS (SDK built with REXGLUE_ENABLE_FIDELITYFX=ON): rexruntime needs
 # amd_fidelityfx_dx12.dll at run time; put it next to fifa08.exe.

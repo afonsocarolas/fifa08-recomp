@@ -26,3 +26,6 @@ out-shots/
 out-rdoc-vs/
 /out-shaders/
 /android/out/
+/xenon/ppc/
+/xenon/ppc.new/
+/xenon/fifa08_switch_tables.toml

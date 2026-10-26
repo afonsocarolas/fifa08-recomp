@@ -1,0 +1,105 @@
+# XenonRecomp config for FIFA 08 (second-opinion recompilation; see README).
+# Generated code goes to xenon/ppc (not committed).
+
+[main]
+file_path = "../game/assets/default.xex"
+out_directory_path = "ppc"
+switch_table_file_path = "fifa08_switch_tables.toml"   # from XenonAnalyse
+
+# Same settings as ReXGlue's build: no optimizations.
+skip_lr = false
+skip_msr = false
+ctr_as_local = false
+xer_as_local = false
+reserved_as_local = false
+cr_as_local = false
+non_argument_as_local = false
+non_volatile_as_local = false
+
+# Register save/restore helpers (addresses from ReXGlue's analysis).
+savegprlr_14_address = 0x82421C70
+restgprlr_14_address = 0x82421CC0
+savefpr_14_address = 0x82422990
+restfpr_14_address = 0x824229DC
+savevmx_14_address = 0x824231C0
+restvmx_14_address = 0x82423458
+savevmx_64_address = 0x82423254
+restvmx_64_address = 0x824234EC
+
+# Functions whose switch cases run past XenonRecomp's guessed end (sizes from ReXGlue's analysis).
+functions = [
+    { address = 0x826C1980, size = 0x130 },  # tail-call target inside 826C1968 (ReXGlue override)
+    { address = 0x8225F758, size = 0xF0 },
+    { address = 0x82273ED0, size = 0xC10 },
+    { address = 0x822E2670, size = 0xF0 },
+    { address = 0x82329D30, size = 0x88 },
+    { address = 0x8239CBA0, size = 0x118 },
+    { address = 0x823EC6F0, size = 0x110 },
+    { address = 0x8244ACB0, size = 0x88 },
+    { address = 0x8244AD38, size = 0x78 },
+    { address = 0x82460680, size = 0x110 },
+    { address = 0x8247C738, size = 0x160 },
+    { address = 0x824B4630, size = 0x148 },
+    { address = 0x824D23E0, size = 0x160 },
+    { address = 0x824D2540, size = 0x80 },
+    { address = 0x824D4258, size = 0xE0 },
+    { address = 0x824F2410, size = 0x120 },
+    { address = 0x825520E8, size = 0x800 },
+    { address = 0x82553BA0, size = 0x98 },
+    { address = 0x82553DF0, size = 0xD0 },
+    { address = 0x825587E8, size = 0x198 },
+    { address = 0x82558980, size = 0x190 },
+    { address = 0x8255EC00, size = 0x90 },
+    { address = 0x82620130, size = 0x100 },
+    { address = 0x82648C90, size = 0x498 },
+    { address = 0x826752D8, size = 0x110 },
+    { address = 0x82680BD0, size = 0x4E8 },
+    { address = 0x826F7CA8, size = 0x108 },
+    { address = 0x827BC310, size = 0xC8 },
+    { address = 0x827F88A8, size = 0xA8 },
+    { address = 0x827F89C8, size = 0x88 },
+    { address = 0x82809B38, size = 0xA0 },
+    { address = 0x82828E20, size = 0x60 },
+    { address = 0x8285BE28, size = 0x68 },
+    { address = 0x8285BEF0, size = 0xA0 },
+    { address = 0x8285BFE0, size = 0x80 },
+    { address = 0x8285C0C0, size = 0xA0 },
+    { address = 0x8285CBB0, size = 0x88 },
+    { address = 0x8286EF60, size = 0xA8 },
+    { address = 0x82879EA8, size = 0x1AC },
+    { address = 0x8289F260, size = 0xD8 },
+    { address = 0x828A1018, size = 0xA0 },
+    { address = 0x82919328, size = 0x90 },
+    { address = 0x829E2D38, size = 0xD8 },
+    { address = 0x829E9C28, size = 0x1F8 },
+    { address = 0x829F82E0, size = 0x2358 },
+    { address = 0x82AD2710, size = 0x88 },
+    { address = 0x82AE39F0, size = 0x120 },
+    { address = 0x82B09E40, size = 0xB8 },
+    { address = 0x82B0AC28, size = 0x68 },
+    { address = 0x82B0BB70, size = 0x88 },
+    { address = 0x82B10BA8, size = 0xB0 },
+    { address = 0x82B11388, size = 0x68 },
+    { address = 0x82B11E48, size = 0x60 },
+    { address = 0x82B13B28, size = 0x58 },
+    { address = 0x82B644A8, size = 0x80 },
+    { address = 0x82BF09E8, size = 0x78 },
+    { address = 0x82C38F18, size = 0x68 },
+    { address = 0x82C38F80, size = 0x68 },
+    { address = 0x82C38FE8, size = 0x60 },
+    { address = 0x82C39048, size = 0x198 },
+    { address = 0x82C391E0, size = 0x170 },
+    { address = 0x82CB8228, size = 0x120 },
+    { address = 0x82CB8480, size = 0xD0 },
+    { address = 0x82CB8550, size = 0x4D8 },
+    { address = 0x82CB8AD0, size = 0x368 },
+    { address = 0x82CDFF58, size = 0x228 },
+    { address = 0x82CF1128, size = 0xD8 },
+    { address = 0x82D2F298, size = 0x2C8 },
+    { address = 0x82DEEC40, size = 0xA8 },
+    { address = 0x82E2BCC8, size = 0x70 },
+]
+
+invalid_instructions = [
+    { data = 0x00000000, size = 4 },  # padding
+]

@@ -9,6 +9,7 @@
 
 REXCVAR_DEFINE_STRING(gpu_backend, "", "GPU", "Backend inside the GPU plugin: d3d12 or vulkan (empty = any)");
 
+#include "crash_trace.h"
 #include "debug_hooks.h"
 #include "rdoc_capture.h"
 #include "touch_controls.h"
@@ -38,6 +39,7 @@ class Fifa08App : public rex::ReXApp {
   void OnPostSetup() override {
     fifa08::StartTimedRenderDocCaptures();
     fifa08::watch::Start();
+    fifa08::crash_trace::Start();
   }
   // On-screen gamepad on touch screens (Android only; a no-op elsewhere).
   void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override { fifa08::touch::Start(drawer); }

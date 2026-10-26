@@ -1,0 +1,45 @@
+# Switch tables XenonAnalyse misses; cases taken from ReXGlue's output.
+# recomp.sh appends these to XenonAnalyse's fifa08_switch_tables.toml.
+
+[[switch]]
+base = 0x82A06FD4
+r = 3
+default = 0x0
+labels = [
+    0x82A0703C,
+    0x82A06FE0,
+    0x82A07094,
+    0x82A06FF0,
+    0x82A070B0,
+    0x82A06FE8,
+    0x82A070F8,
+    0x82A06FD8,
+    0x82A07028,
+    0x82A06FF8,
+    0x82A06FD8,
+    0x82A06FD8,
+]
+
+[[switch]]
+base = 0x82B6A4B8
+r = 24
+default = 0x0
+labels = [
+    0x82B6A4BC,
+    0x82B6A4BC,
+    0x82B69F90,
+    0x82B6A4BC,
+    0x82B6A4BC,
+    0x82B6A4BC,
+    0x82B6A4BC,
+    0x82B69F90,
+    0x82B69F90,
+    0x82B6A4BC,
+    0x82B69F90,
+    0x82B69F90,
+    0x82B6A4BC,
+    0x82B6A4BC,
+    0x82B6A4BC,
+    0x82B6A4BC,
+]
+
