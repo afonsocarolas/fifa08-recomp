@@ -1,8 +1,12 @@
 # Start the FIFA 08 port from the build folder, with logging to run.log.
-# Usage: .\run.ps1 [-Fullscreen] [-Seconds N] [-Extra @("--flag=value")]
+# Usage: .\run.ps1 [-Fullscreen] [-Seconds N] [-ReXGlue] [-Extra @("--flag=value")]
 #   -Seconds N  stop the game after N seconds (for test runs)
-param([switch]$Fullscreen, [int]$Seconds = 0, [string[]]$Extra = @())
-$run = Join-Path $PSScriptRoot "out\build\win-amd64-release"
+#   -ReXGlue    run the ReXGlue-codegen build instead of the XenonRecomp one
+#               (the XenonRecomp build is used when it exists; see xenon\README.md)
+param([switch]$Fullscreen, [int]$Seconds = 0, [switch]$ReXGlue, [string[]]$Extra = @())
+$run = Join-Path $PSScriptRoot "out\build\xenon-release"
+if ($ReXGlue -or -not (Test-Path (Join-Path $run "fifa08.exe"))) { $run = Join-Path $PSScriptRoot "out\build\win-amd64-release" }
+"running $run\fifa08.exe"
 $assets = Join-Path $PSScriptRoot "assets"
 Remove-Item (Join-Path $run "run.log") -ErrorAction SilentlyContinue
 $screen = if ($Fullscreen) { @("--fullscreen") } else { @("--no-fullscreen", "--window_width=1280", "--window_height=720") }

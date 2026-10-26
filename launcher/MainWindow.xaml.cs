@@ -102,6 +102,8 @@ public partial class MainWindow : Window
             settings.GameExe,
             Path.Combine(here, "bin", "fifa08.exe"),
             Path.Combine(here, "fifa08.exe"),
+            // Dev tree: the XenonRecomp build (straight wrists) before the ReXGlue one.
+            Path.GetFullPath(Path.Combine(here, "..", "..", "..", "..", "game", "out", "build", "xenon-release", "fifa08.exe")),
             Path.GetFullPath(Path.Combine(here, "..", "..", "..", "..", "game", "out", "build", "win-amd64-release", "fifa08.exe")),
         };
         string[] dataCandidates =
