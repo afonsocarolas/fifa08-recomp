@@ -1,0 +1,24 @@
+diff --git a/src/input/mnk/mnk_input_driver.cpp b/src/input/mnk/mnk_input_driver.cpp
+index 3d2c378..7119eb2 100644
+--- a/src/input/mnk/mnk_input_driver.cpp
++++ b/src/input/mnk/mnk_input_driver.cpp
+@@ -61,6 +61,10 @@ REXCVAR_DEFINE_STRING(keybind_guide, "", "Input/Keybinds/Controller", "Guide but
+ REXCVAR_DEFINE_BOOL(mnk_passthrough, false, "Input",
+                     "Surface raw keystrokes to the title instead of emulating a pad, for "
+                     "titles that read a USB keyboard. Enables the device on its own");
++REXCVAR_DEFINE_BOOL(mnk_exact_modifiers, true, "Input",
++                    "Keybinds need exactly their Shift/Ctrl/Alt prefixes (so 'Up' and 'Shift+Up' "
++                    "can be different buttons). When off, a bind without a prefix works whatever "
++                    "modifiers are held, and Shift/Control/Alt can be bound on their own");
+ 
+ namespace rex::input::mnk {
+ 
+@@ -133,7 +137,7 @@ std::string_view TrimSpaces(std::string_view s) {
+ 
+ bool TokenPressed(const bool (&key_down)[256], std::string_view token, uint8_t live_mods) {
+   uint8_t want = TakeModifiers(token);
+-  if (want != live_mods) {
++  if (REXCVAR_GET(mnk_exact_modifiers) ? want != live_mods : (live_mods & want) != want) {
+     return false;
+   }
+   rex::ui::VirtualKey vk = rex::ui::ParseVirtualKey(token);

@@ -11,6 +11,7 @@ REXCVAR_DEFINE_STRING(gpu_backend, "", "GPU", "Backend inside the GPU plugin: d3
 
 #include "crash_trace.h"
 #include "debug_hooks.h"
+#include "keyboard_layout.h"
 #include "rdoc_capture.h"
 #include "touch_controls.h"
 #include "write_watch.h"
@@ -33,6 +34,8 @@ class Fifa08App : public rex::ReXApp {
     std::string backend = REXCVAR_GET(gpu_backend);
     if (!backend.empty() && !config.gpu_plugin.empty())
       config.graphics = rex::system::LoadGpuPlugin(config.gpu_plugin, backend);
+    // Before the input system is created, so the keyboard driver starts with it.
+    fifa08::keyboard::Apply();
   }
   // void OnLoadXexImage(std::string& xex_image) override {}
   // void OnPostLoadXexImage() override {}
