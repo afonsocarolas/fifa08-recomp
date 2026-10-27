@@ -123,10 +123,30 @@ public partial class MainWindow : Window
         if (exe == null)
             StatusText.Text = "fifa08.exe not found next to the launcher.";
         else if (data == null)
-            StatusText.Text = "Game files not found: put your FIFA 08 disc files in the Game folder (Game\\default.xex).";
+            StatusText.Text = "Game files not found: choose the folder with your FIFA 08 disc files (the one with default.xex).";
         else
             StatusText.Text = $"Game files: {data}";
         PlayButton.IsEnabled = exe != null && data != null;
+    }
+
+    void OnChooseGameFolder(object sender, RoutedEventArgs e)
+    {
+        using var dialog = new System.Windows.Forms.FolderBrowserDialog
+        {
+            Description = "Choose the folder with your FIFA 08 disc files (the one with default.xex)",
+            UseDescriptionForTitle = true,
+        };
+        if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+            return;
+        if (!File.Exists(Path.Combine(dialog.SelectedPath, "default.xex")))
+        {
+            MessageBox.Show(this, "That folder has no default.xex. Choose the folder with your FIFA 08 disc files.",
+                            "Game files not found", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        settings.GameData = dialog.SelectedPath;
+        settings.Save();
+        UpdateStatus();
     }
 
     void OnPlay(object sender, RoutedEventArgs e)

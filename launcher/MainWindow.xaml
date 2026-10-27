@@ -109,7 +109,15 @@
       </StackPanel>
     </Grid>
 
-    <TextBlock x:Name="StatusText" Style="{StaticResource Hint}" Margin="2,0,0,10"/>
+    <Grid Margin="2,0,0,10">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition/>
+        <ColumnDefinition Width="Auto"/>
+      </Grid.ColumnDefinitions>
+      <TextBlock x:Name="StatusText" Style="{StaticResource Hint}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+      <Button Grid.Column="1" Content="Choose game folder..." Padding="10,4" Margin="12,0,0,0"
+              Click="OnChooseGameFolder" Cursor="Hand"/>
+    </Grid>
     <Button x:Name="PlayButton" Content="PLAY" Height="46" FontSize="18" FontWeight="Bold"
             Background="{StaticResource Accent}" Foreground="#14171C" BorderThickness="0"
             Click="OnPlay" Cursor="Hand"/>
